@@ -1,5 +1,25 @@
 # app/robo_advisor.py
 
+import requests
+import json
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+print("REQUESTING SOME DATA FROM THE INTERNET...")
+
+Symbol = input("Symbol:  ")
+APIkey = os.getenv("ALPHAVANTAGE_API_KEY", default = "OOPS")
+
+request_url = ("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + Symbol + "&apikey=" + APIkey)
+print("URL:", request_url)
+
+response = requests.get(request_url)
+
+parsed_response = json.loads(response.text)
+print(parsed_response)
+
 print("-------------------------")
 print("SELECTED SYMBOL: XYZ")
 print("-------------------------")
