@@ -8,6 +8,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 print("REQUESTING SOME DATA FROM THE INTERNET...")
+print("-------------------------")
 
 Symbol = input("Symbol:  ")
 APIkey = os.getenv("ALPHAVANTAGE_API_KEY", default = "OOPS")
@@ -16,9 +17,19 @@ request_url = ("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&sym
 print("URL:", request_url)
 
 response = requests.get(request_url)
-
 parsed_response = json.loads(response.text)
+
+if "Error Message" in response.text:
+    print("OOPS couldn't find that symbol, please try again")
+    exit()
+
 print(parsed_response)
+
+tsd = parsed_response["Time Series (Daily)"]
+for date, prices in tsd.items():
+    print(date)
+    print(prices)
+    print("-------------------------")
 
 print("-------------------------")
 print("SELECTED SYMBOL: XYZ")
