@@ -5,6 +5,8 @@ import json
 import os
 from dotenv import load_dotenv
 import datetime
+import plotly
+import plotly.graph_objs as go
 
 load_dotenv()
 
@@ -76,7 +78,7 @@ FiftyTwoHigh = max(High[0:53])
 FiftyTwoLow = min(Low[0:53])
 Lastest = Close[0]
 
-
+#Write the logic for recomendation
 
 print("-------------------------")
 print("SELECTED SYMBOL: ", meta["2. Symbol"].upper())
@@ -91,6 +93,12 @@ print("RECENT LOW: ", to_usd(eval(Low[0])))
 print("-------------------------")
 print("52-WEEK HIGH: ", to_usd(eval(FiftyTwoHigh)))
 print("52-WEEK LOW: ", to_usd(eval(FiftyTwoLow)))
+print("-------------------------")
+print("GENERATING LINE GRAPH...")
+plotly.offline.plot({
+    "data": [go.Scatter(x=Dates, y=Close)],
+    "layout": go.Layout(title="Line Data")
+}, auto_open=True)
 print("-------------------------")
 print("RECOMMENDATION: BUY!")
 print("RECOMMENDATION REASON: TODO")
