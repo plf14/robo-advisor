@@ -28,6 +28,7 @@ print("-------------------------")
 print("WELCOME TO THE ROBO STOCK ADVISOR")
 print("ENTER THE SYMBOL(S) OF YOUR STOCK(S) TO RECIEVE MY RECOMENDATION(S)")
 print("ENTER 'DONE' WHEN FINISHED")
+
 SymbolList = []
 condition = True
 while condition == True:
@@ -77,12 +78,29 @@ for Symbol in SymbolList:
     Low = []
     Close = []
     Volume = []
+    Headers = ['timestamp','open','high','low','close','volume']
+    Rows = [Headers]
     for Date in Dates:
         Open.append(wsd[Date]["1. open"])
         High.append(wsd[Date]["2. high"])
         Low.append(wsd[Date]["3. low"])
         Close.append(wsd[Date]["4. close"])
         Volume.append(wsd[Date]["5. volume"])
+        Row = []
+        Row.append(Date)
+        Row.append(wsd[Date]["1. open"])
+        Row.append(wsd[Date]["2. high"])
+        Row.append(wsd[Date]["3. low"])
+        Row.append(wsd[Date]["4. close"])
+        Row.append(wsd[Date]["5. volume"])
+        Rows.append(Row)
+
+    FileName = str("data/" + Symbol.upper() + ".csv")
+    with open(FileName, 'w+') as csvfile:
+        thewriter = csv.writer(csvfile)
+        for Row in Rows:
+            thewriter.writerow(Row)
+        csvfile.close()
 
     FiftyTwoHigh = max(High[0:53])
     FiftyTwoLow = min(Low[0:53])
@@ -105,10 +123,10 @@ for Symbol in SymbolList:
     print("52-WEEK LOW: ", to_usd(eval(FiftyTwoLow)))
     print("-------------------------")
     print("GENERATING LINE GRAPH...")
-    plotly.offline.plot({
-        "data": [go.Scatter(x=Dates, y=Close)],
-        "layout": go.Layout(title= str(meta["2. Symbol"].upper()) + " WEEKLY CLOSE DATA")
-    }, auto_open=True)
+    #plotly.offline.plot({
+    #    "data": [go.Scatter(x=Dates, y=Close)],
+    #    "layout": go.Layout(title= str(meta["2. Symbol"].upper()) + " WEEKLY CLOSE DATA")
+    #}, auto_open=True)
     print("-------------------------")
     print("RECOMMENDATION: BUY!")
     print("RECOMMENDATION REASON: TODO")
