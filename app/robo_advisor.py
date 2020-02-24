@@ -25,53 +25,72 @@ print("-------------------------")
 print("WELCOME TO THE ROBO STOCK ADVISOR")
 print("ENTER THE SYMBOL OF YOUR STOCK TO RECIEVE MY RECOMENDATION")
 Symbol = input("SYMBOL: ")
+
+if len(Symbol) > 5 or len(Symbol) < 1:
+    print("-------------------------")
+    print("EXPECTING A SYMBOL BETWEEN 1 AND 5 CHARACTERS, PLEASE TRY AGAIN")
+    print("-------------------------")
+    exit()
+
+for i in range(len(Symbol)):
+    if Symbol[i].isnumeric():
+        print("-------------------------")
+        print("EXPECTING A SYMBOL CONTATINING ONLY LETTERS, PLEASE TRY AGAIN")
+        print("-------------------------")
+        exit()
+
 print("-------------------------")
 print("REQUESTING SOME DATA FROM THE INTERNET...")
 print("-------------------------")
 
 APIkey = os.getenv("ALPHAVANTAGE_API_KEY", default = "OOPS")
 
-request_url = ("https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=" + Symbol + "&apikey=" + APIkey)
+request_url = ("https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&outputsize=full&symbol=" + Symbol + "&apikey=" + APIkey)
 print("URL:", request_url)
 
 response = requests.get(request_url)
 parsed_response = json.loads(response.text)
-tsd = parsed_response["Time Series (Daily)"]
-Dates = list(tsd.keys())
-Opens = []
-Highs = []
-Lows = []
-Closes = []
-Volumes = []
-for Date in Dates:
-    Opens.append(tsd[Date]["1. open"])
-    Highs.append(tsd[Date]["2. high"])
-    Lows.append(tsd[Date]["3. low"])
-    Closes.append(tsd[Date]["4. close"])
-    Volumes.append(tsd[Date]["5. volume"])
 
 if "Error Message" in response.text:
     print("OOPS COULD NOT FIND THAT SYMBOL, PLEASE TRY AGAIN")
     exit()
 
-#print(parsed_response)
-#
-#for date, prices in tsd.items():
-#    print(date)
+meta = parsed_response["Meta Data"]
+wsd = parsed_response["Weekly Time Series"]
 
-#    print(prices)
-#    print("-------------------------")
+Dates = list(wsd.keys())
+Open = []
+High = []
+Low = []
+Close = []
+Volume = []
+
+for Date in Dates:
+    Open.append(wsd[Date]["1. open"])
+    High.append(wsd[Date]["2. high"])
+    Low.append(wsd[Date]["3. low"])
+    Close.append(wsd[Date]["4. close"])
+    Volume.append(wsd[Date]["5. volume"])
+
+FiftyTwoHigh = max(High[0:53])
+FiftyTwoLow = min(Low[0:53])
+Lastest = Close[0]
+
+
 
 print("-------------------------")
-print("SELECTED SYMBOL: ", Symbol.upper())
+print("SELECTED SYMBOL: ", meta["2. Symbol"].upper())
 print("-------------------------")
 print("REQUESTING STOCK MARKET DATA...")
 print("REQUEST AT: ", date, time.strftime("%I:%M %p"))
 print("-------------------------")
 print("LATEST DAY: ", Dates[0])
-print("LATEST CLOSE: ", to_usd(eval(Closes[0])))
-print("RECENT HIGH: ", to_usd(eval(Highs[0])))
-print("RECENT LOW: ", to_usd(eval(Lows[0])))
+print("LATEST CLOSE: ", to_usd(eval(Close[0])))
+print("RECENT HIGH: ", to_usd(eval(High[0])))
+print("RECENT LOW: ", to_usd(eval(Low[0])))
+print("-------------------------")
+print("52-WEEK HIGH: ", to_usd(eval(FiftyTwoHigh)))
+print("52-WEEK LOW: ", to_usd(eval(FiftyTwoLow)))
 print("-------------------------")
 print("RECOMMENDATION: BUY!")
 print("RECOMMENDATION REASON: TODO")
