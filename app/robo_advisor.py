@@ -8,6 +8,7 @@ import datetime
 import plotly
 import plotly.graph_objs as go
 import csv
+from twilio.rest import Client
 
 load_dotenv()
 
@@ -24,9 +25,17 @@ def to_usd(my_price):
 date = datetime.date.today()
 time = datetime.datetime.now()
 
+TWILIO_ACCOUNT_SID = os.environ.get("TWILIO_ACCOUNT_SID", "OOPS, PLEASE SPECIFY ENV VAR CALLED 'TWILIO_ACCOUNT_SID'")
+TWILIO_AUTH_TOKEN  = os.environ.get("TWILIO_AUTH_TOKEN", "OOPS, PLEASE SPECIFY ENV VAR CALLED 'TWILIO_AUTH_TOKEN'")
+SENDER_SMS  = os.environ.get("SENDER_SMS", "OOPS, PLEASE SPECIFY ENV VAR CALLED 'SENDER_SMS'")
+RECIPIENT_SMS  = os.environ.get("RECIPIENT_SMS", "OOPS, PLEASE SPECIFY ENV VAR CALLED 'RECIPIENT_SMS'")
+
+client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
+
 print("-------------------------")
 print("WELCOME TO THE ROBO STOCK ADVISOR")
 print("ENTER THE SYMBOL(S) OF YOUR STOCK(S) TO RECIEVE MY RECOMENDATION(S)")
+print("DISCLAIMER:  PREIUM ACCOUNT REQUIRED TO REQUEST MORE THAN 5 STOCKS")
 print("ENTER 'DONE' WHEN FINISHED")
 
 SymbolList = []
@@ -44,14 +53,14 @@ for Symbol in SymbolList:
         print("-------------------------")
         print("EXPECTING A SYMBOL BETWEEN 1 AND 5 CHARACTERS, PLEASE TRY AGAIN")
         print("-------------------------")
-        exit()
+        continue
 
     for i in range(len(Symbol)):
         if Symbol[i].isnumeric():
             print("-------------------------")
             print("EXPECTING A SYMBOL CONTATINING ONLY LETTERS, PLEASE TRY AGAIN")
             print("-------------------------")
-            exit()
+            continue
 
     print("-------------------------")
     print("REQUESTING SOME DATA FROM THE INTERNET...")
@@ -67,6 +76,10 @@ for Symbol in SymbolList:
 
     if "Error Message" in response.text:
         print("OOPS COULD NOT FIND THAT SYMBOL, PLEASE TRY AGAIN")
+        continue
+
+    if "higher API call frequency" in response.text:
+        print("OOPS LOOKS LIKE YOU ENTERED TOO MANY STOCKS, PLEASE TRY AGAIN")
         exit()
 
     meta = parsed_response["Meta Data"]
@@ -80,6 +93,7 @@ for Symbol in SymbolList:
     Volume = []
     Headers = ['timestamp','open','high','low','close','volume']
     Rows = [Headers]
+
     for Date in Dates:
         Open.append(wsd[Date]["1. open"])
         High.append(wsd[Date]["2. high"])
@@ -102,14 +116,32 @@ for Symbol in SymbolList:
             thewriter.writerow(Row)
         csvfile.close()
 
+    SymbolCode = meta["2. Symbol"].upper()
     FiftyTwoHigh = max(High[0:53])
     FiftyTwoLow = min(Low[0:53])
-    Lastest = Close[0]
+    Latest = Close[0]
+    PercentChange = (eval(Close[0]) - eval(Close[1]))/eval(Close[1]) * 100
 
-    #Write the logic for recomendation
+    if eval(Latest) >= eval(FiftyTwoHigh) * .85:
+        Recomendation = "BUY!"
+        Reason = "THE STOCK HAS BEEN DOING WELL, IT'S TRADING CLOSE TO ITS 52-WEEK HIGH"
+    else:
+        Recomendation = "SELL!"
+        Reason = "THE STOCK ISN'T DOING WELL. IT'S TRADING WELL BELOW ITS 52-WEEK HIGH"
 
     print("-------------------------")
-    print("SELECTED SYMBOL: ", meta["2. Symbol"].upper())
+    NextStock = input("PRESS ENTER TO SEE MY RECOMENDATION")
+
+    if PercentChange >= 5:
+        content = f"SINCE YESTERDAY'S CLOSE, {SymbolCode} IS UP {str(round(float(PercentChange), 2))}%.  BUY QUICKLY!"
+        message = client.messages.create(to=RECIPIENT_SMS, from_=SENDER_SMS, body=content)
+    elif PercentChange <= -5:
+        PercentChange = PercentChange * -1
+        content = f"SINCE YESTERDAY'S CLOSE, {SymbolCode} IS DOWN {str(round(float(PercentChange), 2))}%.  SELL QUICKLY!"
+        message = client.messages.create(to=RECIPIENT_SMS, from_=SENDER_SMS, body=content)
+
+    print("-------------------------")
+    print("SELECTED SYMBOL: ", SymbolCode)
     print("-------------------------")
     print("REQUESTING STOCK MARKET DATA...")
     print("REQUEST AT: ", date, time.strftime("%I:%M %p"))
@@ -123,13 +155,15 @@ for Symbol in SymbolList:
     print("52-WEEK LOW: ", to_usd(eval(FiftyTwoLow)))
     print("-------------------------")
     print("GENERATING LINE GRAPH...")
-    #plotly.offline.plot({
-    #    "data": [go.Scatter(x=Dates, y=Close)],
-    #    "layout": go.Layout(title= str(meta["2. Symbol"].upper()) + " WEEKLY CLOSE DATA")
-    #}, auto_open=True)
+
+    plotly.offline.plot({
+        "data": [go.Scatter(x=Dates[0:53], y=Close[0:53])],
+        "layout": go.Layout(title= str(meta["2. Symbol"].upper()) + " WEEKLY CLOSE DATA")
+    }, auto_open=True)
+
     print("-------------------------")
-    print("RECOMMENDATION: BUY!")
-    print("RECOMMENDATION REASON: TODO")
+    print("RECOMMENDATION: ", Recomendation)
+    print("RECOMMENDATION REASON: ", Reason)
 
 print("-------------------------")
 print("HAPPY INVESTING!")
