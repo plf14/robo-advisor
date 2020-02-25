@@ -52,14 +52,12 @@ for Symbol in SymbolList:
     if len(Symbol) > 5 or len(Symbol) < 1:
         print("-------------------------")
         print("EXPECTING A SYMBOL BETWEEN 1 AND 5 CHARACTERS, PLEASE TRY AGAIN")
-        print("-------------------------")
         continue
 
     for i in range(len(Symbol)):
         if Symbol[i].isnumeric():
             print("-------------------------")
             print("EXPECTING A SYMBOL CONTATINING ONLY LETTERS, PLEASE TRY AGAIN")
-            print("-------------------------")
             continue
 
     print("-------------------------")
@@ -75,10 +73,12 @@ for Symbol in SymbolList:
     parsed_response = json.loads(response.text)
 
     if "Error Message" in response.text:
+        print("-------------------------")
         print("OOPS COULD NOT FIND THAT SYMBOL, PLEASE TRY AGAIN")
         continue
 
     if "higher API call frequency" in response.text:
+        print("-------------------------")
         print("OOPS LOOKS LIKE YOU ENTERED TOO MANY STOCKS, PLEASE TRY AGAIN")
         exit()
 
@@ -130,7 +130,7 @@ for Symbol in SymbolList:
         Reason = "THE STOCK ISN'T DOING WELL. IT'S TRADING WELL BELOW ITS 52-WEEK HIGH"
 
     print("-------------------------")
-    NextStock = input("PRESS ENTER TO SEE MY RECOMENDATION")
+    NextStock = input("PRESS ENTER TO SEE MY RECOMENDATION FOR " + SymbolCode)
 
     if PercentChange >= 5:
         content = f"SINCE YESTERDAY'S CLOSE, {SymbolCode} IS UP {str(round(float(PercentChange), 2))}%.  BUY QUICKLY!"
@@ -154,16 +154,16 @@ for Symbol in SymbolList:
     print("52-WEEK HIGH: ", to_usd(eval(FiftyTwoHigh)))
     print("52-WEEK LOW: ", to_usd(eval(FiftyTwoLow)))
     print("-------------------------")
-    print("GENERATING LINE GRAPH...")
+    print("RECOMMENDATION: ", Recomendation)
+    print("RECOMMENDATION REASON: ", Reason)
+    print("-------------------------")
+    Graph = input("PRESS ENTER TO SEE A CHART OF " + SymbolCode + " OVER THE LAST 52-WEEKS")
+    print("GENERATING STOCK PRICE CHART...")
 
     plotly.offline.plot({
         "data": [go.Scatter(x=Dates[0:53], y=Close[0:53])],
         "layout": go.Layout(title= str(meta["2. Symbol"].upper()) + " WEEKLY CLOSE DATA")
     }, auto_open=True)
-
-    print("-------------------------")
-    print("RECOMMENDATION: ", Recomendation)
-    print("RECOMMENDATION REASON: ", Reason)
 
 print("-------------------------")
 print("HAPPY INVESTING!")
