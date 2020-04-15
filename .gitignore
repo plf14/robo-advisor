@@ -5,3 +5,6 @@
 .env
 
 temp-plot.html
+
+.pytest_cache
+*.pyc
