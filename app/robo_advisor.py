@@ -1,5 +1,7 @@
 # app/robo_advisor.py
 
+#SETUP
+
 import requests
 import json
 import os
@@ -22,6 +24,45 @@ def to_usd(my_price):
     """
     return f"${my_price:,.2f}" #> $12,000.71
 
+def human_friendly_timestamp(time):
+    """
+    Converts raw time data to standard 12-hour time, for printing and display purposes.
+    """
+    return time.strftime("%I:%M %p")
+
+def compile_url(Symbol, APIkey):
+    """
+    Properly formats the request_url when given a proper stock ticker and Alpha Vantage API key.
+    """
+    request_url = ("https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&outputsize=full&symbol=" + Symbol + "&apikey=" + APIkey)
+    return request_url
+
+def transform_response(wsd, Dates, Rows):
+    """
+    Takes the Weekly Series Data, Dates, and Column Headers and transforms the data into a form 
+    ready to be written into a .csv file
+    """
+    for Date in Dates:
+        Row = []
+        Row.append(Date)
+        Row.append(wsd[Date]["1. open"])
+        Row.append(wsd[Date]["2. high"])
+        Row.append(wsd[Date]["3. low"])
+        Row.append(wsd[Date]["4. close"])
+        Row.append(wsd[Date]["5. volume"])
+        Rows.append(Row)
+    return Rows
+
+def create_lists(wsd, Dates, List, Key):
+    """
+    Takes the Weekly Series Data, Dates, Appropriate Column Headers and its Key and retrives the 
+    proper information from the Weekly Series Data and stores it in a list so that it's easier to work 
+    with and display
+    """
+    for Date in Dates:
+        List.append(wsd[Date][Key])
+    return List
+
 date = datetime.date.today()
 time = datetime.datetime.now()
 
@@ -33,6 +74,8 @@ RECIPIENT_SMS  = os.environ.get("RECIPIENT_SMS", "OOPS, PLEASE SPECIFY ENV VAR C
 client = Client(TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN)
 
 if __name__ == "__main__":
+
+    #APPLICATION
 
     print("-------------------------")
     print("WELCOME TO THE ROBO STOCK ADVISOR")
@@ -68,7 +111,7 @@ if __name__ == "__main__":
 
         APIkey = os.getenv("ALPHAVANTAGE_API_KEY", default = "OOPS")
 
-        request_url = ("https://www.alphavantage.co/query?function=TIME_SERIES_WEEKLY&outputsize=full&symbol=" + Symbol + "&apikey=" + APIkey)
+        request_url = compile_url(Symbol, APIkey)
         print("URL:", request_url)
 
         response = requests.get(request_url)
@@ -88,28 +131,25 @@ if __name__ == "__main__":
         wsd = parsed_response["Weekly Time Series"]
 
         Dates = list(wsd.keys())
+
         Open = []
+        Open = create_lists(wsd, Dates, Open, "1. open")
+
         High = []
+        High = create_lists(wsd, Dates, High, "2. high")
+
         Low = []
+        Low = create_lists(wsd, Dates, Low, "3. low")
+
         Close = []
+        Close =  create_lists(wsd, Dates, Close, "4. close")
+
         Volume = []
+        Volume = create_lists(wsd, Dates, Volume, "5. volume")
+        
         Headers = ['timestamp','open','high','low','close','volume']
         Rows = [Headers]
-
-        for Date in Dates:
-            Open.append(wsd[Date]["1. open"])
-            High.append(wsd[Date]["2. high"])
-            Low.append(wsd[Date]["3. low"])
-            Close.append(wsd[Date]["4. close"])
-            Volume.append(wsd[Date]["5. volume"])
-            Row = []
-            Row.append(Date)
-            Row.append(wsd[Date]["1. open"])
-            Row.append(wsd[Date]["2. high"])
-            Row.append(wsd[Date]["3. low"])
-            Row.append(wsd[Date]["4. close"])
-            Row.append(wsd[Date]["5. volume"])
-            Rows.append(Row)
+        Rows = transform_response(wsd, Dates, Rows)
 
         FileName = str("data/" + Symbol.upper() + ".csv")
         with open(FileName, 'w+') as csvfile:
@@ -146,7 +186,7 @@ if __name__ == "__main__":
         print("SELECTED SYMBOL: ", SymbolCode)
         print("-------------------------")
         print("REQUESTING STOCK MARKET DATA...")
-        print("REQUEST AT: ", date, time.strftime("%I:%M %p"))
+        print("REQUEST AT: ", date, human_friendly_timestamp(time))
         print("-------------------------")
         print("LATEST DAY: ", Dates[0])
         print("LATEST CLOSE: ", to_usd(eval(Close[0])))
